@@ -3,6 +3,7 @@ package github.pitbox46.touchuptooltips;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
@@ -50,6 +51,8 @@ public class TouchUpTooltips
 
     @EventBusSubscriber(modid = MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
     public static class ClientEvents {
+        private static float scroll = 0;
+
         /**
          * Modified from {@link GuiGraphics#renderTooltipInternal(Font, List, int, int, ClientTooltipPositioner)}
          * @param event
@@ -61,6 +64,7 @@ public class TouchUpTooltips
             GuiGraphics gui = event.getGraphics();
             ItemStack tooltipStack = event.getItemStack();
             List<ClientTooltipComponent> components = event.getComponents();
+
             ClientTooltipPositioner tooltipPositioner = (screenWidth, screenHeight, mouseX, mouseY, tooltipWidth, tooltipHeight) -> {
                 Vector2ic pos = event.getTooltipPositioner().positionTooltip(screenWidth, screenHeight, mouseX, mouseY, tooltipWidth, tooltipHeight);
                 Vector2ic returnPos = new Vector2i(pos.x(), Math.max(pos.y(), 4));
@@ -81,7 +85,7 @@ public class TouchUpTooltips
             }
 
             final int tipWidthFinal = tipWidth;
-            final int tipHeightFinal = Math.min(tipHeight, event.getScreenHeight() - 8);
+            final int tipHeightFinal = Math.min(tipHeight, gui.guiHeight() - 8);
             Vector2ic vector2ic = tooltipPositioner.positionTooltip(gui.guiWidth(), gui.guiHeight(), event.getX(), event.getY(), tipWidth, tipHeight);
             final int startX = vector2ic.x();
             final int startY = vector2ic.y();
@@ -90,12 +94,19 @@ public class TouchUpTooltips
             int z = 400;
             net.neoforged.neoforge.client.event.RenderTooltipEvent.Color colorEvent = net.neoforged.neoforge.client.ClientHooks.onRenderTooltipColor(tooltipStack, gui, startX, startY, event.getFont(), components);
             gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthFinal, tipHeightFinal, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
-            gui.pose().translate(0.0F, 0.0F, z);
+            gui.pose().translate(0.0F, -scroll, z);
+            //Scissor the text to fit inside the tooltip box
+            gui.enableScissor(0, 2, gui.guiWidth(), gui.guiHeight() - 2);
             int currentY = startY;
 
             for (int i = 0; i < components.size(); i++) {
                 ClientTooltipComponent clienttooltipcomponent1 = components.get(i);
-                clienttooltipcomponent1.renderText(event.getFont(), startX, currentY, gui.pose().last().pose(), gui.bufferSource());
+                if (clienttooltipcomponent1 instanceof ClientTextTooltip tooltip) {
+                    gui.drawString(event.getFont(), tooltip.text, startX, currentY, -1);
+                } else {
+                    //This doesn't get scissored for some reason
+                    clienttooltipcomponent1.renderText(event.getFont(), startX, currentY, gui.pose().last().pose(), gui.bufferSource());
+                }
                 currentY += clienttooltipcomponent1.getHeight() + (i == 0 ? 2 : 0);
             }
 
@@ -106,7 +117,7 @@ public class TouchUpTooltips
                 clienttooltipcomponent2.renderImage(event.getFont(), startX, currentY, gui);
                 currentY += clienttooltipcomponent2.getHeight() + (i == 0 ? 2 : 0);
             }
-
+            gui.disableScissor();
             gui.pose().popPose();
         }
     }
