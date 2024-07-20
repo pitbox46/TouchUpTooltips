@@ -1,15 +1,12 @@
 package github.pitbox46.touchuptooltips;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.Util;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.component.ItemLore;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -19,11 +16,10 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Mod(TouchUpTooltips.MODID)
@@ -34,7 +30,7 @@ public class TouchUpTooltips
 
     public TouchUpTooltips(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT);
-        NeoForge.EVENT_BUS.register(this);
+//        NeoForge.EVENT_BUS.register(this);
     }
 
     // Spawns in a sword for testing
@@ -54,6 +50,10 @@ public class TouchUpTooltips
 
     @EventBusSubscriber(modid = MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
     public static class ClientEvents {
+        /**
+         * Modified from {@link GuiGraphics#renderTooltipInternal(Font, List, int, int, ClientTooltipPositioner)}
+         * @param event
+         */
         @SubscribeEvent
         public static void onRenderTooltip(RenderTooltipEvent.Pre event) {
             event.setCanceled(true);
@@ -61,30 +61,35 @@ public class TouchUpTooltips
             GuiGraphics gui = event.getGraphics();
             ItemStack tooltipStack = event.getItemStack();
             List<ClientTooltipComponent> components = event.getComponents();
-            ClientTooltipPositioner tooltipPositioner = event.getTooltipPositioner();
+            ClientTooltipPositioner tooltipPositioner = (screenWidth, screenHeight, mouseX, mouseY, tooltipWidth, tooltipHeight) -> {
+                Vector2ic pos = event.getTooltipPositioner().positionTooltip(screenWidth, screenHeight, mouseX, mouseY, tooltipWidth, tooltipHeight);
+                Vector2ic returnPos = new Vector2i(pos.x(), Math.max(pos.y(), 4));
+                return returnPos;
+            };
 
 
-            int tpWidth = 0;
-            int tpHeight = components.size() == 1 ? -2 : 0;
+            int tipWidth = 0;
+            int tipHeight = components.size() == 1 ? -2 : 0;
 
             for (ClientTooltipComponent clienttooltipcomponent : components) {
                 int componentWidth = clienttooltipcomponent.getWidth(event.getFont());
-                if (componentWidth > tpWidth) {
-                    tpWidth = componentWidth;
+                if (componentWidth > tipWidth) {
+                    tipWidth = componentWidth;
                 }
 
-                tpHeight += clienttooltipcomponent.getHeight();
+                tipHeight += clienttooltipcomponent.getHeight();
             }
 
-            int i2 = tpWidth;
-            int j2 = tpHeight;
-            Vector2ic vector2ic = tooltipPositioner.positionTooltip(gui.guiWidth(), gui.guiHeight(), event.getX(), event.getY(), i2, j2);
-            int startX = vector2ic.x();
-            int startY = vector2ic.y();
+            final int tipWidthFinal = tipWidth;
+            final int tipHeightFinal = Math.min(tipHeight, event.getScreenHeight() - 8);
+            Vector2ic vector2ic = tooltipPositioner.positionTooltip(gui.guiWidth(), gui.guiHeight(), event.getX(), event.getY(), tipWidth, tipHeight);
+            final int startX = vector2ic.x();
+            final int startY = vector2ic.y();
+
             gui.pose().pushPose();
             int z = 400;
             net.neoforged.neoforge.client.event.RenderTooltipEvent.Color colorEvent = net.neoforged.neoforge.client.ClientHooks.onRenderTooltipColor(tooltipStack, gui, startX, startY, event.getFont(), components);
-            gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, i2, j2, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
+            gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthFinal, tipHeightFinal, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
             gui.pose().translate(0.0F, 0.0F, z);
             int currentY = startY;
 
