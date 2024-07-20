@@ -15,6 +15,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector2i;
@@ -51,7 +53,21 @@ public class TouchUpTooltips
 
     @EventBusSubscriber(modid = MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
     public static class ClientEvents {
-        private static float scroll = 0;
+        private static ItemStack hoveredStack = ItemStack.EMPTY;
+        private static long scroll = 0;
+        private static float partialTicks = 0;
+        private static int shouldResetScroll = 0;
+
+        @SubscribeEvent
+        public static void onClientTick(ClientTickEvent.Pre event) {
+            scroll += 1;
+        }
+
+        @SubscribeEvent
+        public static void onRenderGUI(RenderGuiEvent.Pre event) {
+            partialTicks = event.getPartialTick().getRealtimeDeltaTicks();
+            shouldResetScroll++;
+        }
 
         /**
          * Modified from {@link GuiGraphics#renderTooltipInternal(Font, List, int, int, ClientTooltipPositioner)}
@@ -65,12 +81,19 @@ public class TouchUpTooltips
             ItemStack tooltipStack = event.getItemStack();
             List<ClientTooltipComponent> components = event.getComponents();
 
+            if (shouldResetScroll > 1) {
+                scroll = 0;
+            }
+            shouldResetScroll = 0;
+            if (hoveredStack != tooltipStack) {
+                hoveredStack = tooltipStack;
+                scroll = 0;
+            }
+
             ClientTooltipPositioner tooltipPositioner = (screenWidth, screenHeight, mouseX, mouseY, tooltipWidth, tooltipHeight) -> {
                 Vector2ic pos = event.getTooltipPositioner().positionTooltip(screenWidth, screenHeight, mouseX, mouseY, tooltipWidth, tooltipHeight);
-                Vector2ic returnPos = new Vector2i(pos.x(), Math.max(pos.y(), 4));
-                return returnPos;
+                return new Vector2i(pos.x(), Math.max(pos.y(), 4));
             };
-
 
             int tipWidth = 0;
             int tipHeight = components.size() == 1 ? -2 : 0;
@@ -83,7 +106,7 @@ public class TouchUpTooltips
 
                 tipHeight += clienttooltipcomponent.getHeight();
             }
-
+            boolean tooTall = tipHeight > gui.guiHeight();
             final int tipWidthFinal = tipWidth;
             final int tipHeightFinal = Math.min(tipHeight, gui.guiHeight() - 8);
             Vector2ic vector2ic = tooltipPositioner.positionTooltip(gui.guiWidth(), gui.guiHeight(), event.getX(), event.getY(), tipWidth, tipHeight);
@@ -94,7 +117,7 @@ public class TouchUpTooltips
             int z = 400;
             net.neoforged.neoforge.client.event.RenderTooltipEvent.Color colorEvent = net.neoforged.neoforge.client.ClientHooks.onRenderTooltipColor(tooltipStack, gui, startX, startY, event.getFont(), components);
             gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthFinal, tipHeightFinal, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
-            gui.pose().translate(0.0F, -scroll, z);
+            gui.pose().translate(0.0F, tooTall ? (-scroll-partialTicks) * 0.5 : 0, z);
             //Scissor the text to fit inside the tooltip box
             gui.enableScissor(0, 2, gui.guiWidth(), gui.guiHeight() - 2);
             int currentY = startY;
