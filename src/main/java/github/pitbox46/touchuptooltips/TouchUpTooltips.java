@@ -117,14 +117,11 @@ public class TouchUpTooltips
 
                 tipHeight += clienttooltipcomponent.getHeight();
             }
-            final int tipWidthEffective = tipWidth;
-            final int tipHeightEffective = Math.min(tipHeight, gui.guiHeight() - 8);
-            int heightDiff = tipHeight - tipHeightEffective;
-            Vector2ic vector2ic = tooltipPositioner.positionTooltip(gui.guiWidth(), gui.guiHeight(), event.getX(), event.getY(), tipWidth, tipHeight);
-            final int startX = vector2ic.x();
-            final int startY = vector2ic.y();
 
             gui.pose().pushPose();
+
+            final int tipWidthEffective = tipWidth;
+            final int tipHeightEffective = Math.min(tipHeight, gui.guiHeight() - 8);
 
             //Scaler
             float scale = 1;
@@ -133,11 +130,14 @@ public class TouchUpTooltips
                 if (scale < Config.SCALE_MAX.get()) {
                     scale = Config.SCALE_MAX.get().floatValue();
                 }
-                gui.pose().translate(startX, 0, 0);
-                gui.pose().scale(scale, scale, 1);
-
-                heightDiff = (int) (tipHeight * scale - tipHeightEffective);
             }
+
+            int heightDiff = (int) (tipHeight * scale - tipHeightEffective);
+            Vector2ic vector2ic = tooltipPositioner.positionTooltip(gui.guiWidth(), gui.guiHeight(), event.getX(), event.getY(), (int) (tipWidth * scale), tipHeight);
+            final int startX = vector2ic.x();
+            final int startY = vector2ic.y();
+            gui.pose().translate(startX, 0, 0);
+            gui.pose().scale(scale, scale, 1);
 
             //Autoscroller
             float scrollAmount = 0;
