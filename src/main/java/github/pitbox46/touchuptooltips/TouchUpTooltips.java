@@ -118,15 +118,21 @@ public class TouchUpTooltips
 
             gui.pose().pushPose();
             int z = 400;
-            float scrollAmount = heightDiff > 0 ? (float) ((scroll + partialTicks) * Config.SCROLL_SPEED.get() - Config.SCROLL_WAIT.get()) : 0;
-            if (!Config.SCROLL.get() || scrollAmount < 0) {
-                scrollAmount = 0;
-            } else if (scrollAmount > heightDiff) {
-                if (scrollAmount > heightDiff + Config.SCROLL_WAIT.get()) {
-                    scroll = 0;
+
+            //Autoscroller
+            float scrollAmount = 0;
+            if (Config.SCROLL.get()) {
+                scrollAmount = heightDiff > 0 ? (float) ((scroll + partialTicks) * Config.SCROLL_SPEED.get() - Config.SCROLL_WAIT.get()):0;
+                if (!Config.SCROLL.get() || scrollAmount < 0) {
+                    scrollAmount = 0;
+                } else if (scrollAmount > heightDiff) {
+                    if (scrollAmount > heightDiff + Config.SCROLL_WAIT.get()) {
+                        scroll = 0;
+                    }
+                    scrollAmount = heightDiff;
                 }
-                scrollAmount = heightDiff;
             }
+
             net.neoforged.neoforge.client.event.RenderTooltipEvent.Color colorEvent = net.neoforged.neoforge.client.ClientHooks.onRenderTooltipColor(tooltipStack, gui, startX, startY, event.getFont(), components);
             gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthEffective, tipHeightEffective, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
             gui.pose().translate(0.0F, -scrollAmount, z);
