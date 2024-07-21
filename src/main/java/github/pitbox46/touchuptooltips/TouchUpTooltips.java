@@ -133,8 +133,19 @@ public class TouchUpTooltips
                 }
             }
 
+            //Scaler
+            if (Config.SCALE.get()) {
+                float scale = (float) tipHeightEffective / tipHeight;
+                if (scale < Config.SCALE_MAX.get()) {
+                    scale = Config.SCALE_MAX.get().floatValue();
+                }
+                gui.pose().translate(startX * (1 - scale), 0, 0);
+                gui.pose().scale(scale, scale, 1);
+            }
+
             net.neoforged.neoforge.client.event.RenderTooltipEvent.Color colorEvent = net.neoforged.neoforge.client.ClientHooks.onRenderTooltipColor(tooltipStack, gui, startX, startY, event.getFont(), components);
-            gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthEffective, tipHeightEffective, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
+            int finalTipHeight = tipHeight;
+            gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthEffective, Config.SCALE.get() ? finalTipHeight: tipHeightEffective, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
             gui.pose().translate(0.0F, -scrollAmount, z);
             //Scissor the text to fit inside the tooltip box
             gui.enableScissor(0, 2, gui.guiWidth(), gui.guiHeight() - 2);

@@ -19,5 +19,14 @@ public class Config
             .comment("Multiplier to autoscroll speed")
             .defineInRange("scroll_speed", 0.5, 0.0, 255.0);
 
+    public static final ModConfigSpec.BooleanValue SCALE = BUILDER
+            .pop().push("autoscale")
+            .comment("Enable autoscaler")
+            .define("autoscale", false);
+
+    public static final ModConfigSpec.DoubleValue SCALE_MAX = BUILDER
+            .comment("Max autoscaling")
+            .defineInRange("scale_max", 0.5, 0.0, 1.0);
+
     public static final ModConfigSpec CLIENT = BUILDER.build();
 }
