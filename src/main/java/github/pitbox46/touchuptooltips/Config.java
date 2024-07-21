@@ -44,7 +44,7 @@ public class Config
     public static final ModConfigSpec.BooleanValue SCALE = BUILDER
             .pop().push("autoscale")
             .comment("Enable autoscaler")
-            .define("autoscale", false);
+            .define("autoscale", true);
 
     public static final ModConfigSpec.DoubleValue SCALE_MAX = BUILDER
             .comment("Dictates how far the autoscaler will zoom out (lower value = smaller tooltip)")

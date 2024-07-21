@@ -37,7 +37,16 @@ import java.util.Random;
 @Mod(TouchUpTooltips.MODID)
 public class TouchUpTooltips {
     public static final String MODID = "touchuptooltips";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
+
+    /**
+     * If false, the mod will not run. For testing only
+     */
+    private static final boolean IS_ACTIVATED = true;
+    /**
+     * If true, a debug item with will be spawned on respawn. For testing only
+     */
+    private static final boolean SPAWN_DEBUG_ITEM = false;
 
     public TouchUpTooltips(IEventBus modEventBus, ModContainer modContainer) {
         if (FMLEnvironment.dist != Dist.CLIENT) {
@@ -50,7 +59,6 @@ public class TouchUpTooltips {
     }
 
     // Spawns in a sword for testing
-    private static final boolean SPAWN_DEBUG_ITEM = false;
     @SubscribeEvent
     public void onPlayerJoin(PlayerEvent.PlayerRespawnEvent event) {
         if (!SPAWN_DEBUG_ITEM || event.getEntity().level().isClientSide) {
@@ -95,6 +103,9 @@ public class TouchUpTooltips {
          */
         @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void onRenderTooltip(RenderTooltipEvent.Pre event) {
+            if (!IS_ACTIVATED) {
+                return;
+            }
             event.setCanceled(true);
 
             GuiGraphics gui = event.getGraphics();
