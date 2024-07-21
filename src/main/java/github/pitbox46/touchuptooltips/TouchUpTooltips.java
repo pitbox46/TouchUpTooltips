@@ -119,23 +119,23 @@ public class TouchUpTooltips
             gui.pose().pushPose();
 
             //Scaler
+            float scale = 1;
             if (Config.SCALE.get()) {
-                float scale = (float) tipHeightEffective / tipHeight;
+                scale = (float) tipHeightEffective / tipHeight;
                 if (scale < Config.SCALE_MAX.get()) {
                     scale = Config.SCALE_MAX.get().floatValue();
                 }
                 gui.pose().translate(startX * (1 - scale), 0, 0);
                 gui.pose().scale(scale, scale, 1);
 
-                tipHeight = (int) (tipHeight * scale);
-                //TODO Fix this
-                heightDiff = tipHeight - Math.min(tipHeight, gui.guiHeight() - 8);
+                heightDiff = (int) (tipHeight * scale - tipHeightEffective);
             }
 
             //Autoscroller
             float scrollAmount = 0;
             if (Config.SCROLL.get()) {
-                scrollAmount = heightDiff > 0 ? (float) ((scroll + partialTicks) * Config.SCROLL_SPEED.get() - Config.SCROLL_WAIT_TOP.get()):0;
+                double speed = Config.SCROLL_SPEED.get() * scale;
+                scrollAmount = heightDiff > 0 ? (float) ((scroll + partialTicks) * speed - Config.SCROLL_WAIT_TOP.get()):0;
                 if (!Config.SCROLL.get() || scrollAmount < 0) {
                     scrollAmount = 0;
                 } else if (scrollAmount > heightDiff) {
@@ -150,7 +150,7 @@ public class TouchUpTooltips
             int finalTipHeight = tipHeight;
             int z = 400;
             gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthEffective, Config.SCALE.get() ? finalTipHeight: tipHeightEffective, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
-            gui.pose().translate(0.0F, -scrollAmount, z);
+            gui.pose().translate(0.0F, -scrollAmount / scale, z);
             //Scissor the text to fit inside the tooltip box
             gui.enableScissor(0, 2, gui.guiWidth(), gui.guiHeight() - 2);
             int currentY = startY;
