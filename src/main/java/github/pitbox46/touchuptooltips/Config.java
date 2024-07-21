@@ -11,9 +11,13 @@ public class Config
             .comment("Enable autoscroller")
             .define("autoscroll", true);
 
-    public static final ModConfigSpec.IntValue SCROLL_WAIT = BUILDER
-            .comment("Time (ticks) before autoscrolling starts AND the time that the scroller hangs at the bottom before resetting to the top")
-            .defineInRange("scroll_wait", 20, 0, Integer.MAX_VALUE);
+    public static final ModConfigSpec.IntValue SCROLL_WAIT_TOP = BUILDER
+            .comment("Time (ticks) before autoscrolling starts")
+            .defineInRange("scroll_wait_top", 20, 0, Integer.MAX_VALUE);
+
+    public static final ModConfigSpec.IntValue SCROLL_WAIT_BOTTOM = BUILDER
+            .comment("Time (ticks) before autoscrolling resets to top once it hits the bottom")
+            .defineInRange("scroll_wait_bottom", 60, 0, Integer.MAX_VALUE);
 
     public static final ModConfigSpec.DoubleValue SCROLL_SPEED = BUILDER
             .comment("Multiplier to autoscroll speed")

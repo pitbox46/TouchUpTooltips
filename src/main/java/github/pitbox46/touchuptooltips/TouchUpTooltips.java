@@ -135,11 +135,11 @@ public class TouchUpTooltips
             //Autoscroller
             float scrollAmount = 0;
             if (Config.SCROLL.get()) {
-                scrollAmount = heightDiff > 0 ? (float) ((scroll + partialTicks) * Config.SCROLL_SPEED.get() - Config.SCROLL_WAIT.get()):0;
+                scrollAmount = heightDiff > 0 ? (float) ((scroll + partialTicks) * Config.SCROLL_SPEED.get() - Config.SCROLL_WAIT_TOP.get()):0;
                 if (!Config.SCROLL.get() || scrollAmount < 0) {
                     scrollAmount = 0;
                 } else if (scrollAmount > heightDiff) {
-                    if (scrollAmount > heightDiff + Config.SCROLL_WAIT.get()) {
+                    if (scrollAmount > heightDiff + Config.SCROLL_WAIT_BOTTOM.get()) {
                         scroll = 0;
                     }
                     scrollAmount = heightDiff;
