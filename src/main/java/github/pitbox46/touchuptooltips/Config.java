@@ -45,8 +45,8 @@ public class Config
             .define("autoscale", false);
 
     public static final ModConfigSpec.DoubleValue SCALE_MAX = BUILDER
-            .comment("Max autoscaling")
-            .defineInRange("scale_max", 0.5, 0.0, 1.0);
+            .comment("Dictates how far the autoscaler will zoom out (lower value = smaller tooltip)")
+            .defineInRange("scale_max", 0.75, 0.0, 1.0);
 
     public static final ModConfigSpec.ConfigValue<String> BACKGROUND_COLOR1 = BUILDER
             .pop().push("color")
