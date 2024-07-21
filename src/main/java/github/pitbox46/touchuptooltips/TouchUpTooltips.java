@@ -1,13 +1,17 @@
 package github.pitbox46.touchuptooltips;
 
 import com.mojang.logging.LogUtils;
+import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.ItemLore;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
@@ -19,10 +23,13 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Mod(TouchUpTooltips.MODID)
@@ -33,23 +40,24 @@ public class TouchUpTooltips
 
     public TouchUpTooltips(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT);
-//        NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(this);
     }
-
+//
     // Spawns in a sword for testing
-//    @SubscribeEvent
-//    public void onPlayerJoin(PlayerEvent.PlayerRespawnEvent event) {
-//        if (event.getEntity().level().isClientSide) {
-//            return;
-//        }
-//        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
-//        sword.update(DataComponents.LORE, ItemLore.EMPTY, lore -> new ItemLore(Util.make(new ArrayList<>(), list -> {
-//            for (int i = 0; i < 100; i++) {
-//                list.add(Component.literal(String.valueOf(i)));
-//            }
-//        })));
-//        event.getEntity().spawnAtLocation(sword);
-//    }
+    private static final boolean SPAWN_DEBUG_ITEM = false;
+    @SubscribeEvent
+    public void onPlayerJoin(PlayerEvent.PlayerRespawnEvent event) {
+        if (!SPAWN_DEBUG_ITEM || event.getEntity().level().isClientSide) {
+            return;
+        }
+        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+        sword.update(DataComponents.LORE, ItemLore.EMPTY, lore -> new ItemLore(Util.make(new ArrayList<>(), list -> {
+            for (int i = 0; i < 100; i++) {
+                list.add(Component.literal("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua" + i));
+            }
+        })));
+        event.getEntity().spawnAtLocation(sword);
+    }
 
     @EventBusSubscriber(modid = MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
     public static class ClientEvents {
@@ -125,7 +133,7 @@ public class TouchUpTooltips
                 if (scale < Config.SCALE_MAX.get()) {
                     scale = Config.SCALE_MAX.get().floatValue();
                 }
-                gui.pose().translate(startX * (1 - scale), 0, 0);
+                gui.pose().translate(startX, 0, 0);
                 gui.pose().scale(scale, scale, 1);
 
                 heightDiff = (int) (tipHeight * scale - tipHeightEffective);
@@ -149,7 +157,7 @@ public class TouchUpTooltips
             net.neoforged.neoforge.client.event.RenderTooltipEvent.Color colorEvent = net.neoforged.neoforge.client.ClientHooks.onRenderTooltipColor(tooltipStack, gui, startX, startY, event.getFont(), components);
             int finalTipHeight = tipHeight;
             int z = 400;
-            gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthEffective, Config.SCALE.get() ? finalTipHeight: tipHeightEffective, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
+            gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, 0, startY, tipWidthEffective, Config.SCALE.get() ? finalTipHeight: tipHeightEffective, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
             gui.pose().translate(0.0F, -scrollAmount / scale, z);
             //Scissor the text to fit inside the tooltip box
             gui.enableScissor(0, 2, gui.guiWidth(), gui.guiHeight() - 2);
@@ -158,10 +166,10 @@ public class TouchUpTooltips
             for (int i = 0; i < components.size(); i++) {
                 ClientTooltipComponent clienttooltipcomponent1 = components.get(i);
                 if (clienttooltipcomponent1 instanceof ClientTextTooltip tooltip) {
-                    gui.drawString(event.getFont(), tooltip.text, startX, currentY, -1);
+                    gui.drawString(event.getFont(), tooltip.text, 0, currentY, -1);
                 } else {
                     //This doesn't get scissored for some reason
-                    clienttooltipcomponent1.renderText(event.getFont(), startX, currentY, gui.pose().last().pose(), gui.bufferSource());
+                    clienttooltipcomponent1.renderText(event.getFont(), 0, currentY, gui.pose().last().pose(), gui.bufferSource());
                 }
                 currentY += clienttooltipcomponent1.getHeight() + (i == 0 ? 2 : 0);
             }
@@ -170,7 +178,7 @@ public class TouchUpTooltips
 
             for (int i = 0; i < components.size(); i++) {
                 ClientTooltipComponent clienttooltipcomponent2 = components.get(i);
-                clienttooltipcomponent2.renderImage(event.getFont(), startX, currentY, gui);
+                clienttooltipcomponent2.renderImage(event.getFont(), 0, currentY, gui);
                 currentY += clienttooltipcomponent2.getHeight() + (i == 0 ? 2 : 0);
             }
             gui.disableScissor();
