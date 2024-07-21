@@ -1,6 +1,8 @@
 package github.pitbox46.touchuptooltips;
 
 import net.minecraft.util.FastColor;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.common.util.Lazy;
 
@@ -8,7 +10,7 @@ import java.util.function.Predicate;
 
 public class Config
 {
-    private static Predicate<Object> isInteger = num -> {
+    private static final Predicate<Object> IS_INT = num -> {
         if (num instanceof String s) {
             try {
                 Integer.parseUnsignedInt(s, 16);
@@ -51,19 +53,19 @@ public class Config
     public static final ModConfigSpec.ConfigValue<String> BACKGROUND_COLOR1 = BUILDER
             .pop().push("color")
             .comment("Tooltip background gradient start color (hex ARGB)")
-            .define("background_color1", "F0100010", isInteger);
+            .define("background_color1", "F0100010", IS_INT);
 
     public static final ModConfigSpec.ConfigValue<String> BACKGROUND_COLOR2 = BUILDER
             .comment("Tooltip background gradient end color (hex ARGB)")
-            .define("background_color2", "F0100010", isInteger);
+            .define("background_color2", "F0100010", IS_INT);
 
     public static final ModConfigSpec.ConfigValue<String> BORDER_COLOR1 = BUILDER
             .comment("Tooltip border gradient end color (hex ARGB)")
-            .define("border_color1", "505000FF", isInteger);
+            .define("border_color1", "505000FF", IS_INT);
 
     public static final ModConfigSpec.ConfigValue<String> BORDER_COLOR2 = BUILDER
             .comment("Tooltip border gradient end color (hex ARGB)")
-            .define("border_color2", "5028007F", isInteger);
+            .define("border_color2", "5028007F", IS_INT);
 
     public static final ModConfigSpec.DoubleValue OPACITY = BUILDER
             .comment("Opacity multiplier for the background. Used as a convenience over manually changing the ARGB values")
@@ -71,6 +73,7 @@ public class Config
 
     public static final ModConfigSpec CLIENT = BUILDER.build();
 
+    //Store these as lazy for performance reasons
     public static Lazy<Integer> BACKGROUND_COLOR1_INT = Lazy.of(() -> {
         int col = decodeHex(Config.BACKGROUND_COLOR1);
         return FastColor.ARGB32.color(
@@ -94,5 +97,14 @@ public class Config
 
     public static int decodeHex(ModConfigSpec.ConfigValue<String> value) {
         return Integer.parseUnsignedInt(value.get(), 16);
+    }
+
+    public static void onConfigReload(ModConfigEvent.Reloading event) {
+        if (event.getConfig().getType() == ModConfig.Type.CLIENT) {
+            BACKGROUND_COLOR1_INT.invalidate();
+            BACKGROUND_COLOR2_INT.invalidate();
+            BORDER_COLOR1_INT.invalidate();
+            BORDER_COLOR2_INT.invalidate();
+        }
     }
 }

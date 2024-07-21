@@ -20,6 +20,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
@@ -31,18 +32,23 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Mod(TouchUpTooltips.MODID)
-public class TouchUpTooltips
-{
+public class TouchUpTooltips {
     public static final String MODID = "touchuptooltips";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public TouchUpTooltips(IEventBus modEventBus, ModContainer modContainer) {
+        if (FMLEnvironment.dist != Dist.CLIENT) {
+            LOGGER.info("Not initializing {} because this is not a client", MODID);
+            return;
+        }
         modContainer.registerConfig(ModConfig.Type.CLIENT, Config.CLIENT);
         NeoForge.EVENT_BUS.register(this);
+        modEventBus.addListener(Config::onConfigReload);
     }
-//
+
     // Spawns in a sword for testing
     private static final boolean SPAWN_DEBUG_ITEM = false;
     @SubscribeEvent
@@ -52,8 +58,11 @@ public class TouchUpTooltips
         }
         ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
         sword.update(DataComponents.LORE, ItemLore.EMPTY, lore -> new ItemLore(Util.make(new ArrayList<>(), list -> {
-            for (int i = 0; i < 100; i++) {
-                list.add(Component.literal("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua" + i));
+            for (int i = 0; i < 10; i++) {
+                list.add(Component
+                        .literal("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua" + i)
+                        .withColor(new Random().nextInt())
+                );
             }
         })));
         event.getEntity().spawnAtLocation(sword);
