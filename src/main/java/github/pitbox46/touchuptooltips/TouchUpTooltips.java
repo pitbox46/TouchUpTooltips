@@ -56,16 +56,19 @@ public class TouchUpTooltips
         private static ItemStack hoveredStack = ItemStack.EMPTY;
         private static long scroll = 0;
         private static float partialTicks = 0;
+        //Used as a flag to determine if the tooltip autoscroll should be reset
         private static int shouldResetScroll = 0;
 
         @SubscribeEvent
         public static void onClientTick(ClientTickEvent.Pre event) {
+            //Tick the autoscroller
             scroll += 1;
         }
 
         @SubscribeEvent
         public static void onRenderGUI(RenderGuiEvent.Pre event) {
-            partialTicks = event.getPartialTick().getRealtimeDeltaTicks();
+            //Get partial ticks for tooltip render later
+            partialTicks = event.getPartialTick().getGameTimeDeltaPartialTick(false);
             shouldResetScroll++;
         }
 
@@ -106,18 +109,27 @@ public class TouchUpTooltips
 
                 tipHeight += clienttooltipcomponent.getHeight();
             }
-            boolean tooTall = tipHeight > gui.guiHeight();
-            final int tipWidthFinal = tipWidth;
-            final int tipHeightFinal = Math.min(tipHeight, gui.guiHeight() - 8);
+            final int tipWidthEffective = tipWidth;
+            final int tipHeightEffective = Math.min(tipHeight, gui.guiHeight() - 8);
+            int heightDiff = tipHeight - tipHeightEffective;
             Vector2ic vector2ic = tooltipPositioner.positionTooltip(gui.guiWidth(), gui.guiHeight(), event.getX(), event.getY(), tipWidth, tipHeight);
             final int startX = vector2ic.x();
             final int startY = vector2ic.y();
 
             gui.pose().pushPose();
             int z = 400;
+            float scrollAmount = heightDiff > 0 ? (float) ((scroll + partialTicks) * Config.SCROLL_SPEED.get() - Config.SCROLL_WAIT.get()) : 0;
+            if (!Config.SCROLL.get() || scrollAmount < 0) {
+                scrollAmount = 0;
+            } else if (scrollAmount > heightDiff) {
+                if (scrollAmount > heightDiff + Config.SCROLL_WAIT.get()) {
+                    scroll = 0;
+                }
+                scrollAmount = heightDiff;
+            }
             net.neoforged.neoforge.client.event.RenderTooltipEvent.Color colorEvent = net.neoforged.neoforge.client.ClientHooks.onRenderTooltipColor(tooltipStack, gui, startX, startY, event.getFont(), components);
-            gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthFinal, tipHeightFinal, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
-            gui.pose().translate(0.0F, tooTall ? (-scroll-partialTicks) * 0.5 : 0, z);
+            gui.drawManaged(() -> TooltipRenderUtil.renderTooltipBackground(gui, startX, startY, tipWidthEffective, tipHeightEffective, z, colorEvent.getBackgroundStart(), colorEvent.getBackgroundEnd(), colorEvent.getBorderStart(), colorEvent.getBorderEnd()));
+            gui.pose().translate(0.0F, -scrollAmount, z);
             //Scissor the text to fit inside the tooltip box
             gui.enableScissor(0, 2, gui.guiWidth(), gui.guiHeight() - 2);
             int currentY = startY;
