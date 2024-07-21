@@ -9,6 +9,7 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositione
 import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
 import net.minecraft.world.item.*;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -18,7 +19,6 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderTooltipEvent;
-import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.slf4j.Logger;
@@ -74,9 +74,9 @@ public class TouchUpTooltips
 
         /**
          * Modified from {@link GuiGraphics#renderTooltipInternal(Font, List, int, int, ClientTooltipPositioner)}
-         * @param event
+         * @param event event
          */
-        @SubscribeEvent
+        @SubscribeEvent(priority = EventPriority.LOWEST)
         public static void onRenderTooltip(RenderTooltipEvent.Pre event) {
             event.setCanceled(true);
 
@@ -175,6 +175,14 @@ public class TouchUpTooltips
             }
             gui.disableScissor();
             gui.pose().popPose();
+        }
+
+        @SubscribeEvent
+        public static void onTooltipColor(RenderTooltipEvent.Color event) {
+            event.setBackgroundStart(Config.BACKGROUND_COLOR1_INT.get());
+            event.setBackgroundEnd(Config.BACKGROUND_COLOR2_INT.get());
+            event.setBorderStart(Config.BORDER_COLOR1_INT.get());
+            event.setBorderEnd(Config.BORDER_COLOR2_INT.get());
         }
     }
 }
